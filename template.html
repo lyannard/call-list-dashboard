@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Call list lookup</title>
+<style>
+:root{--bg:#f6f3ee;--card:#fff;--ink:#1d1b18;--mute:#6a655d;--line:#ddd6ca;--now:#b4411a;--now-bg:#fbe6dc;--wk:#8a6100;--wk-bg:#f8ecc9;--nur:#46556b;--nur-bg:#e6eaf0;--ok:#1f6b45;--ok-bg:#ddf0e4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#17150f;--card:#221f18;--ink:#f2ede3;--mute:#a39c8f;--line:#3a352b;--now:#ff9a6e;--now-bg:#4a2615;--wk:#f0c767;--wk-bg:#43340d;--nur:#a9b8d0;--nur-bg:#2a3341;--ok:#7fd3a0;--ok-bg:#1c3a29}}
+:root[data-theme=dark]{--bg:#17150f;--card:#221f18;--ink:#f2ede3;--mute:#a39c8f;--line:#3a352b;--now:#ff9a6e;--now-bg:#4a2615;--wk:#f0c767;--wk-bg:#43340d;--nur:#a9b8d0;--nur-bg:#2a3341;--ok:#7fd3a0;--ok-bg:#1c3a29}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 18px 40px}
+h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:-.01em}.sub{color:var(--mute);margin:0 0 22px}
+label{display:block;font-size:.8rem;font-weight:600;color:var(--mute);margin:0 0 6px;text-transform:uppercase;letter-spacing:.06em}
+.row{display:flex;gap:8px}input,button{font:inherit;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);padding:12px 14px;min-height:46px}
+input{flex:1;min-width:0}input:focus-visible,button:focus-visible{outline:3px solid var(--now);outline-offset:2px}
+button{cursor:pointer;font-weight:600}button.go{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.field{margin-bottom:16px}.tools{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 22px}
+#out{min-height:120px}.card{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:20px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 14px;margin-bottom:14px}.id{font-weight:700;font-size:1.15rem}.dom{color:var(--mute)}
+.pill{display:inline-block;padding:3px 11px;border-radius:99px;font-weight:700;font-size:.85rem}
+.b-now{background:var(--now-bg);color:var(--now)}.b-wk{background:var(--wk-bg);color:var(--wk)}.b-nur{background:var(--nur-bg);color:var(--nur)}.cust{background:var(--ok-bg);color:var(--ok)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}.stat{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:1.6rem;line-height:1.15}.stat span{font-size:.75rem;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.reason{border-left:4px solid var(--ink);padding:4px 0 4px 14px;font-size:1.12rem}.reason small{display:block;color:var(--mute);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.msg{color:var(--mute)}.list{list-style:none;margin:0;padding:0}.list li{padding:12px 0;border-top:1px solid var(--line)}.list li:first-child{border-top:0}
+.list b{margin-right:8px}footer{margin-top:28px;color:var(--mute);font-size:.8rem}
+@media(max-width:480px){.stats{grid-template-columns:1fr 1fr}.stat:first-child{grid-column:1/-1}}
+</style></head><body><main>
+<h1>Call list lookup</h1><p class="sub">Type an account ID, or pick an account, to see where it sits in the queue.</p>
+<div class="field"><label for="q">Account ID</label><div class="row"><input id="q" placeholder="ACC-10587" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="go" id="go">Look up</button></div></div>
+<div class="field"><label for="pick">Or pick an account</label><input id="pick" list="accts" placeholder="Start typing an ID or domain" autocomplete="off"><datalist id="accts"></datalist></div>
+<div class="tools"><button id="now">Call now only</button><button id="school">Top school account</button></div>
+<div id="out" aria-live="polite"><p class="msg">Results appear here.</p></div>
+<footer>Data: ranked call list, 1,200 accounts</footer></main>
+<script type="application/json" id="data">__DATA__</script>
+<script>
+const D=JSON.parse(document.getElementById('data').textContent);
+const BY=new Map(D.map(r=>[r.id,r]));
+const norm=s=>String(s).replace(/\s+/g,'').toUpperCase();
+const find=raw=>BY.get(norm(raw))||null;
+const callNow=()=>D.filter(r=>r.band==='Call now').sort((a,b)=>a.rank-b.rank);
+const topSchool=()=>D.filter(r=>r.dt==='university'||r.dt==='k12_school').sort((a,b)=>a.rank-b.rank)[0]||null;
+if(typeof document!=='undefined'&&document.getElementById('out')){
+const $=id=>document.getElementById(id),out=$('out');
+const cls={'Call now':'b-now','Call this week':'b-wk','Nurture':'b-nur'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pill=r=>`<span class="pill ${cls[r.band]}">${r.band}</span>`;
+const card=r=>`<div class="card"><div class="top"><span class="id">${r.id}</span><span class="dom">${esc(r.dom)}</span>${pill(r)}${r.status==='Already paying'?'<span class="pill cust">Already a customer</span>':''}</div>
+<div class="stats"><div class="stat"><b>${r.rank.toLocaleString()} <small>of 1,200</small></b><span>Rank</span></div><div class="stat"><b>${r.score}</b><span>Score (0–100)</span></div><div class="stat"><b style="font-size:1.05rem;line-height:1.9">${r.status}</b><span>Status</span></div></div>
+<div class="reason"><small>Say on the call</small>${esc(r.reason)}</div></div>`;
+const show=r=>{out.innerHTML=card(r)};
+function lookup(raw){const r=find(raw);if(r)show(r);else out.innerHTML=`<div class="card"><p class="msg" style="margin:0">${esc(String(raw).trim())||'That ID'} is not in this call list.</p></div>`}
+$('go').onclick=()=>lookup($('q').value);$('q').onkeydown=e=>{if(e.key==='Enter')lookup($('q').value)};
+$('accts').innerHTML=D.map(r=>`<option value="${r.id} · ${esc(r.dom)}">`).join('');
+$('pick').onchange=e=>{const id=e.target.value.split(' · ')[0];$('q').value=id;lookup(id)};
+$('now').onclick=()=>{out.innerHTML=`<div class="card"><ul class="list">${callNow().map(r=>`<li><b>${r.rank}.</b><span class="id">${r.id}</span> ${pill(r)} <b style="margin-left:8px">${r.score}</b><div>${esc(r.reason)}</div></li>`).join('')}</ul></div>`};
+$('school').onclick=()=>{const r=topSchool();if(r){$('q').value=r.id;show(r)}};
+}
+</script></body></html>

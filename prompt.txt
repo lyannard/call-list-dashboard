@@ -1,0 +1,45 @@
+/impeccable  /ui-ux-pro-max  Build a one-page call list dashboard for Sales Development reps as a single
+self-contained HTML file, and publish it so I get a link. Reps use it between
+calls, so the answer must appear fast and be easy to read. Compile all the files into a zip i can open locally
+
+DATA RULE
+Use the attached ranked call list (tab call_list) as the only source. Load it
+with code and embed all 1,200 rows in the page as data. Never type a rank,
+score, band or reason by hand. Show "Data: ranked call list, 1,200 accounts"
+in the page footer.
+
+STEP 1: Fix the data first (also give me the updated workbook, so the Google
+Sheet and the page stay identical)
+- overall_rank 1 to 1,200: scored accounts keep ranks 1-606, then
+  already_paid accounts, then not_scored accounts (by account_id).
+- score: unchanged for scored accounts, 0 for already_paid and not_scored.
+- band for every row: Call now (80-100), Call this week (50-79), Nurture (0-49).
+- status: Prospect, Already paying, School or Personal.
+- add domain_type and student_signups columns.
+- school reasons name the count, e.g. "School workspace with 279 student
+  sign-ups; not a team buyer."
+
+STEP 2: The page
+- A search box for an account ID, and a searchable dropdown of all 1,200
+  accounts labeled "ACC-10587 · domain.com". Do not use workspace names;
+  they repeat.
+- The result shows the ID, "rank X of 1,200", score, band, status and the
+  one-line reason. Paying accounts also show an "Already a customer" badge.
+- Matching: strip spaces and ignore case, so " ACC-10342" and "acc-10918"
+  find the right account.
+- An ID not in the list (like ACC-11347) shows "ACC-11347 is not in this
+  call list." with no score. No crash and no blank page.
+- A "Call now only" button lists Call now accounts in rank order, each with
+  score and reason.
+- A "Top school account" button shows the highest-ranked university or
+  k12_school account (rank outside the top 100, reason names the student
+  sign-ups).
+- No account may show a blank reason or a blank score.
+
+STEP 3: Checks (report before giving me the link)
+1. Run all 10 lookups from the requests file against the page's data and
+   compare each result with its row in the sheet.
+2. Confirm all 1,200 IDs return an answer, including ACC-10001 and ACC-11200.
+3. Confirm the embedded data equals the workbook row for row.
+4. Look up one paying account (for example ACC-10070) and describe what the
+   page shows.
